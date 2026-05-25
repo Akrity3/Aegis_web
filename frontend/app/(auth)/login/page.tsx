@@ -5,7 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { loginSchema, LoginFormValues } from "../_components/schema";
+// import { loginSchema, LoginFormValues } from "../_components/schema";
 
 const alerts = [
   { icon: "⚠", label: "SOS Activated", sub: "New Road, KTM · Now", color: "#dc2626", bg: "rgba(220,38,38,0.12)" },
@@ -22,12 +22,12 @@ export default function LoginPage() {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
-  } = useForm<LoginFormValues>({
-    resolver: zodResolver(loginSchema),
+  } = useForm<>({
+    resolver: (),
   });
 
-  const onSubmit = async (data: LoginFormValues) => {
-    console.log("Login data:", data);
+  const onSubmit = async () => {
+    console.log("Login data:", );
   };
 
   const inputBase = {
@@ -51,7 +51,64 @@ export default function LoginPage() {
 
   return (
     <div style={{ display: "flex", minHeight: "100vh", fontFamily: "'DM Sans', 'Segoe UI', sans-serif" }}>
-      
+      {/* Left Panel */}
+      <div style={{
+        flex: 1,
+        background: "linear-gradient(150deg, #2d6a4f 0%, #1b4332 55%, #081c15 100%)",
+        padding: "40px 52px",
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "space-between",
+        position: "relative",
+        overflow: "hidden",
+      }}>
+        <div style={{
+          position: "absolute", inset: 0,
+          backgroundImage: "radial-gradient(ellipse at 15% 60%, rgba(74,222,128,0.07) 0%, transparent 55%), radial-gradient(ellipse at 85% 15%, rgba(74,222,128,0.04) 0%, transparent 50%)",
+          pointerEvents: "none",
+        }} />
+
+        {/* <div style={{ display: "flex", alignItems: "center", gap: 10, position: "relative" }}> */}
+          {/* <Image src="/logo.png" alt="Aegis+ Logo" width={42} height={42} style={{ borderRadius: 8, objectFit: "contain" }} /> */}
+          {/* <span style={{ color: "#fff", fontWeight: 700, fontSize: 26, letterSpacing: "1px" }}>
+            AEGIS<span style={{ color: "#dc2626" }}>+</span>
+          </span> */}
+        {/* </div> */}
+
+        <div style={{ position: "relative" }}>
+          <h1 style={{
+            color: "#fff", fontSize: "clamp(2.2rem, 4vw, 3.2rem)",
+            fontWeight: 800, lineHeight: 1.18, marginBottom: 20, letterSpacing: "-0.5px",
+          }}>
+            Protecting Nepal,<br />One Alert at a Time
+          </h1>
+          <p style={{ color: "rgba(255,255,255,0.65)", fontSize: 17, lineHeight: 1.75, marginBottom: 36 }}>
+            Sign in to access real-time safety alerts,<br />
+            report incidents, and stay connected with your community.
+          </p>
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            {alerts.map((a, i) => (
+              <div key={i} style={{
+                background: "rgba(255,255,255,0.06)",
+                border: "1px solid rgba(255,255,255,0.09)",
+                borderRadius: 10, padding: "13px 16px",
+                display: "flex", alignItems: "center", justifyContent: "space-between",
+              }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                  <div style={{
+                    width: 36, height: 36, borderRadius: 8, background: a.bg,
+                    display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16,
+                  }}>{a.icon}</div>
+                  <div>
+                    <div style={{ color: "#f1f5f9", fontWeight: 600, fontSize: 15 }}>{a.label}</div>
+                    <div style={{ color: "rgba(255,255,255,0.4)", fontSize: 13 }}>{a.sub}</div>
+                  </div>
+                </div>
+                <div style={{ width: 7, height: 7, borderRadius: "50%", background: "#4ade80", boxShadow: "0 0 5px #4ade80" }} />
+              </div>
+            ))}
+          </div>
+        </div>
 
         <div style={{ color: "rgba(255,255,255,0.25)", fontSize: 13.5, position: "relative" }}>© 2026 Aegis+ · Protecting Nepal</div>
       </div>
