@@ -5,7 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-// import { loginSchema, LoginFormValues } from "../_components/schema";
+import { loginSchema, LoginFormValues } from "../_components/schema";
 
 const alerts = [
   { icon: "⚠", label: "SOS Activated", sub: "New Road, KTM · Now", color: "#dc2626", bg: "rgba(220,38,38,0.12)" },
@@ -22,12 +22,12 @@ export default function LoginPage() {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
-  } = useForm<>({
-    resolver: (),
+  } = useForm<LoginFormValues>({
+    resolver: zodResolver(loginSchema),
   });
 
-  const onSubmit = async () => {
-    console.log("Login data:", );
+  const onSubmit = async (data: LoginFormValues) => {
+    console.log("Login data:", data);
   };
 
   const inputBase = {
