@@ -7,7 +7,12 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { registerSchema, RegisterFormValues } from "../_components/schema";
 
-
+const alerts = [
+  { icon: "⚠", label: "SOS Activated", sub: "New Road, KTM · Now", color: "#dc2626", bg: "rgba(220,38,38,0.12)" },
+  { icon: "✓", label: "Area Secured", sub: "Thamel · 3 min ago", color: "#16a34a", bg: "rgba(22,163,74,0.12)" },
+  { icon: "🔔", label: "2 Active Alerts", sub: "Your zone · Ongoing", color: "#ca8a04", bg: "rgba(202,138,4,0.12)" },
+  { icon: "📍", label: "Location Shared", sub: "Patan, Lalitpur · 7m", color: "#2563eb", bg: "rgba(37,99,235,0.12)" },
+];
 
 export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false);
@@ -107,7 +112,28 @@ export default function RegisterPage() {
             real-time safety alerts, incident reports, and<br />
             AI-powered risk detection for your area.
           </p>
-          
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            {alerts.map((a, i) => (
+              <div key={i} style={{
+                background: "rgba(255,255,255,0.06)",
+                border: "1px solid rgba(255,255,255,0.09)",
+                borderRadius: 10, padding: "13px 16px",
+                display: "flex", alignItems: "center", justifyContent: "space-between",
+              }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                  <div style={{
+                    width: 36, height: 36, borderRadius: 8, background: a.bg,
+                    display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16,
+                  }}>{a.icon}</div>
+                  <div>
+                    <div style={{ color: "#f1f5f9", fontWeight: 600, fontSize: 15 }}>{a.label}</div>
+                    <div style={{ color: "rgba(255,255,255,0.4)", fontSize: 13 }}>{a.sub}</div>
+                  </div>
+                </div>
+                <div style={{ width: 7, height: 7, borderRadius: "50%", background: "#4ade80", boxShadow: "0 0 5px #4ade80" }} />
+              </div>
+            ))}
+          </div>
         </div>
 
         <div style={{ color: "rgba(255,255,255,0.25)", fontSize: 13.5, position: "relative" }}>© 2026 Aegis+ · Protecting Nepal</div>
@@ -122,8 +148,13 @@ export default function RegisterPage() {
           padding: "48px 52px", overflowY: "auto",
         }}>
           <div style={{ width: "100%", maxWidth: 460 }}>
-            {/* Logo */}
-            
+            {/* Logo replacing green shield */}
+            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 32 }}>
+              <Image src="/logo.png" alt="Aegis+ Logo" width={56} height={56} style={{ borderRadius: 10, objectFit: "contain" }} />
+              <span style={{ color: "#000000", fontWeight: 800, fontSize: 28, letterSpacing: "1.5px" }}>
+                AEGIS<span style={{ color: "#dc2626" }}>+</span>
+              </span>
+            </div>
 
             <h2 style={{ fontSize: 30, fontWeight: 800, color: "#0f172a", marginBottom: 8, letterSpacing: "-0.4px" }}>Create your account</h2>
             <p style={{ color: "#64748b", fontSize: 16.5, marginBottom: 36, lineHeight: 1.6 }}>Start protecting yourself and your community today.</p>
