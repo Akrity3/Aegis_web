@@ -33,7 +33,13 @@
 // }
 // frontend/app/layout.tsx
 
+import type { Metadata } from "next";
 import "./globals.css";
+
+export const metadata: Metadata = {
+  title: "Aegis+ | Personal Safety & Alert System",
+  description: "Real-time safety alerts and incident reporting for Nepal",
+};
 
 export default function RootLayout({
   children,
