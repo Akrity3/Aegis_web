@@ -2,8 +2,11 @@ import axiosInstance from "./axios-instance";
 import { API } from "./endpoints";
 
 export type RegisterPayload = {
-    fullName: string;
+    firstName: string;
+    lastName: string;
+    username: string;
     email: string;
+    phoneNumber: string;
     password: string;
 };
 

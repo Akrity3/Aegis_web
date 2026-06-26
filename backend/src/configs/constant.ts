@@ -7,3 +7,4 @@ export const MONGODB_URL: string =
     process.env.MONGODB_URL || "mongodb://localhost:27017/aegis-db";
 export const SECRET_KEY: string =
     process.env.SECRET_KEY || "aegis-dev-secret-key";
+        

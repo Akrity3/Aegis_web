@@ -7,8 +7,11 @@ import { setTokenCookie, storeUserData } from "@/lib/cookies";
 export const handleRegisterUser = async (data: RegisterFormValues) => {
     try {
         const result = await register({
-            fullName: data.fullName,
+            firstName: data.firstName,
+            lastName: data.lastName,
+            username: data.username,
             email: data.email,
+            phoneNumber: data.phoneNumber,
             password: data.password,
         });
 
@@ -38,8 +41,9 @@ export const handleLoginUser = async (data: LoginFormValues) => {
         const result = await login(data);
 
         if (result.success) {
-            const user = result.data.user;
-            const token = result.data.token;
+            // Backend returns { success, token, data } — not result.user
+            const user = result.data;
+            const token = result.token;
             await setTokenCookie(token);
             await storeUserData(user);
 

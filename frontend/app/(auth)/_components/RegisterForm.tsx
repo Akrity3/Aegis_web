@@ -177,23 +177,59 @@ export default function RegisterForm() {
                 </div>
               )}
 
-              <label style={labelStyle}>Full Name</label>
+              <label style={labelStyle}>First Name</label>
               <div style={{ position: "relative", marginBottom: 4 }}>
-                <span style={{ position: "absolute", left: 13, top: "50%", transform: "translateY(-50%)", color: errors.fullName ? "#ef4444" : "#94a3b8", display: "flex" }}>
+                <span style={{ position: "absolute", left: 13, top: "50%", transform: "translateY(-50%)", color: errors.firstName ? "#ef4444" : "#94a3b8", display: "flex" }}>
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
                   </svg>
                 </span>
                 <input
                   type="text"
-                  placeholder="Your full name"
-                  {...register("fullName")}
-                  style={errors.fullName ? { ...inputError } : { ...inputBase }}
-                  onFocus={e => { if (!errors.fullName) { e.target.style.borderColor = "#22c55e"; e.target.style.background = "#fff"; } }}
-                  onBlur={e => { if (!errors.fullName) { e.target.style.borderColor = "#e2e8f0"; e.target.style.background = "#f8fafc"; } }}
+                  placeholder="First name"
+                  {...register("firstName")}
+                  style={errors.firstName ? { ...inputError } : { ...inputBase }}
+                  onFocus={e => { if (!errors.firstName) { e.target.style.borderColor = "#22c55e"; e.target.style.background = "#fff"; } }}
+                  onBlur={e => { if (!errors.firstName) { e.target.style.borderColor = "#e2e8f0"; e.target.style.background = "#f8fafc"; } }}
                 />
               </div>
-              {errors.fullName ? errorMsg(errors.fullName.message!) : <div style={{ marginBottom: 20 }} />}
+              {errors.firstName ? errorMsg(errors.firstName.message!) : <div style={{ marginBottom: 20 }} />}
+
+              <label style={labelStyle}>Last Name</label>
+              <div style={{ position: "relative", marginBottom: 4 }}>
+                <span style={{ position: "absolute", left: 13, top: "50%", transform: "translateY(-50%)", color: errors.lastName ? "#ef4444" : "#94a3b8", display: "flex" }}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+                  </svg>
+                </span>
+                <input
+                  type="text"
+                  placeholder="Last name"
+                  {...register("lastName")}
+                  style={errors.lastName ? { ...inputError } : { ...inputBase }}
+                  onFocus={e => { if (!errors.lastName) { e.target.style.borderColor = "#22c55e"; e.target.style.background = "#fff"; } }}
+                  onBlur={e => { if (!errors.lastName) { e.target.style.borderColor = "#e2e8f0"; e.target.style.background = "#f8fafc"; } }}
+                />
+              </div>
+              {errors.lastName ? errorMsg(errors.lastName.message!) : <div style={{ marginBottom: 20 }} />}
+
+              <label style={labelStyle}>Username</label>
+              <div style={{ position: "relative", marginBottom: 4 }}>
+                <span style={{ position: "absolute", left: 13, top: "50%", transform: "translateY(-50%)", color: errors.username ? "#ef4444" : "#94a3b8", display: "flex" }}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+                  </svg>
+                </span>
+                <input
+                  type="text"
+                  placeholder="Choose a username"
+                  {...register("username")}
+                  style={errors.username ? { ...inputError } : { ...inputBase }}
+                  onFocus={e => { if (!errors.username) { e.target.style.borderColor = "#22c55e"; e.target.style.background = "#fff"; } }}
+                  onBlur={e => { if (!errors.username) { e.target.style.borderColor = "#e2e8f0"; e.target.style.background = "#f8fafc"; } }}
+                />
+              </div>
+              {errors.username ? errorMsg(errors.username.message!) : <div style={{ marginBottom: 20 }} />}
 
               <label style={labelStyle}>Email address</label>
               <div style={{ position: "relative", marginBottom: 4 }}>
@@ -212,6 +248,24 @@ export default function RegisterForm() {
                 />
               </div>
               {errors.email ? errorMsg(errors.email.message!) : <div style={{ marginBottom: 20 }} />}
+
+              <label style={labelStyle}>Phone Number</label>
+              <div style={{ position: "relative", marginBottom: 4 }}>
+                <span style={{ position: "absolute", left: 13, top: "50%", transform: "translateY(-50%)", color: errors.phoneNumber ? "#ef4444" : "#94a3b8", display: "flex" }}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 13a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 2.21h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 9.91a16 16 0 0 0 6.06 6.06l.94-.94a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7a2 2 0 0 1 1.72 2.02z"/>
+                  </svg>
+                </span>
+                <input
+                  type="tel"
+                  placeholder="+977 98XXXXXXXX (optional)"
+                  {...register("phoneNumber")}
+                  style={errors.phoneNumber ? { ...inputError } : { ...inputBase }}
+                  onFocus={e => { if (!errors.phoneNumber) { e.target.style.borderColor = "#22c55e"; e.target.style.background = "#fff"; } }}
+                  onBlur={e => { if (!errors.phoneNumber) { e.target.style.borderColor = "#e2e8f0"; e.target.style.background = "#f8fafc"; } }}
+                />
+              </div>
+              {errors.phoneNumber ? errorMsg(errors.phoneNumber.message!) : <div style={{ marginBottom: 20 }} />}
 
               <label style={labelStyle}>Password</label>
               <div style={{ position: "relative", marginBottom: 4 }}>

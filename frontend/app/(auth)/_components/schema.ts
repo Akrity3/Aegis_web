@@ -12,14 +12,27 @@ export type LoginFormValues = z.infer<typeof loginSchema>;
 
 export const registerSchema = z
   .object({
-    fullName: z
+    firstName: z
       .string()
       .trim()
-      .min(2, "Enter your full name"),
+      .min(1, "First name is required"),
+    lastName: z
+      .string()
+      .trim()
+      .min(1, "Last name is required"),
+    username: z
+      .string()
+      .trim()
+      .min(3, "Username must be at least 3 characters"),
     email: z
       .string()
       .trim()
       .email("Enter a valid email address"),
+    phoneNumber: z
+      .string()
+      .trim()
+      .min(7, "Phone number is required")
+      .regex(/^\+?[\d\s\-()]{7,15}$/, "Enter a valid phone number"),
     password: z
       .string()
       .min(8, "Password must be at least 8 characters")

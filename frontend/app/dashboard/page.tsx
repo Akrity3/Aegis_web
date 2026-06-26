@@ -1,10 +1,11 @@
 import Image from "next/image";
 import Link from "next/link";
-import { getUserData } from "@/lib/cookies";
+import { getUserData, clearAuthCookies } from "@/lib/cookies";
+import { redirect } from "next/navigation";
 
 export default async function DashboardPage() {
   const user = await getUserData();
-  const name = user?.fullName || user?.email || "User";
+  const name = user?.firstName ? `${user.firstName} ${user.lastName || ""}` : (user?.email || "User");
 
   return (
     <div style={{ minHeight: "100vh", background: "#f0fdf4", fontFamily: "'DM Sans', 'Segoe UI', sans-serif" }}>
@@ -13,14 +14,27 @@ export default async function DashboardPage() {
         padding: "16px 32px", background: "#fff", borderBottom: "1px solid #e2e8f0",
       }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <Image src="/logo.png" alt="Aegis+ Logo" width={40} height={40} style={{ borderRadius: 8 }} />
           <span style={{ fontWeight: 800, fontSize: 22 }}>
             Aegis<span style={{ color: "#dc2626" }}>+</span>
           </span>
         </div>
-        <Link href="/login" style={{ color: "#16a34a", fontWeight: 600, textDecoration: "none", fontSize: 14 }}>
-          Sign out
-        </Link>
+        <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
+          <Link href="/dashboard/profile" style={{ color: "#475569", fontWeight: 600, textDecoration: "none", fontSize: 14 }}>
+            Update Profile
+          </Link>
+          <Link href="/dashboard/password" style={{ color: "#475569", fontWeight: 600, textDecoration: "none", fontSize: 14 }}>
+            Change Password
+          </Link>
+          <form action={async () => {
+            "use server";
+            await clearAuthCookies();
+            redirect("/login");
+          }}>
+            <button type="submit" style={{ color: "#dc2626", background: "none", border: "none", fontWeight: 600, fontSize: 14, cursor: "pointer" }}>
+              Sign out
+            </button>
+          </form>
+        </div>
       </header>
 
       <main style={{ maxWidth: 960, margin: "0 auto", padding: "48px 32px" }}>
