@@ -6,7 +6,25 @@ export default async function Home() {
   const token = cookieStore.get("auth_token")?.value;
 
   if (token) {
-    redirect("/dashboard");
+    // Check user role from user_data cookie for role-based redirection
+    const userDataCookie = cookieStore.get("user_data")?.value;
+    let userRole = "user";
+    
+    if (userDataCookie) {
+      try {
+        const userData = JSON.parse(userDataCookie);
+        userRole = userData.role || "user";
+      } catch {
+        // If parsing fails, default to user
+        userRole = "user";
+      }
+    }
+
+    if (userRole === "admin") {
+      redirect("/admin");
+    } else {
+      redirect("/dashboard");
+    }
   } else {
     redirect("/login");
   }

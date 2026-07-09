@@ -25,7 +25,7 @@ export async function storeUserData(userData: Record<string, unknown>) {
     cookieStore.set({
         name: "user_data",
         value: JSON.stringify(userData),
-        httpOnly: true,
+        httpOnly: false, // Allow client-side access for AuthContext
         sameSite: "lax",
         path: "/",
     });
