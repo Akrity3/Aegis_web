@@ -1,37 +1,202 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap");
 @import "tailwindcss";
 
+/* ─────────────────────────────────────────────
+   Aegis+ Design System — CSS Custom Properties
+───────────────────────────────────────────── */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+    /* Brand greens */
+    --aegis-50:  #f0fdf4;
+    --aegis-100: #dcfce7;
+    --aegis-200: #bbf7d0;
+    --aegis-300: #86efac;
+    --aegis-400: #4ade80;
+    --aegis-500: #22c55e;
+    --aegis-600: #16a34a;   /* primary */
+    --aegis-700: #15803d;   /* hover */
+    --aegis-800: #166534;
+    --aegis-900: #14532d;
+    --aegis-950: #052e16;
+
+    /* Semantic */
+    --aegis-primary:       var(--aegis-600);
+    --aegis-primary-hover: var(--aegis-700);
+    --aegis-primary-light: var(--aegis-100);
+    --aegis-primary-xlight:var(--aegis-50);
+
+    /* Surfaces */
+    --aegis-bg:      #f8fafc;
+    --aegis-surface: #ffffff;
+    --aegis-border:  #e5e7eb;
+
+    /* Text */
+    --aegis-text:          #0f172a;
+    --aegis-text-secondary:#374151;
+    --aegis-text-muted:    #6b7280;
+    --aegis-text-faint:    #9ca3af;
+
+    /* Sidebar — Light Theme */
+    --sidebar-bg:          #ffffff;
+    --sidebar-border:      #e5e7eb;
+    --sidebar-text:        #374151;
+    --sidebar-text-muted:  #9ca3af;
+    --sidebar-hover-bg:    #f9fafb;
+    --sidebar-hover-text:  #16a34a;
+    --sidebar-active-bg:   #f0fdf4;
+    --sidebar-active-text: #16a34a;
+    --sidebar-active-bar:  #16a34a;
+
+    /* State colours */
+    --aegis-danger:     #dc2626;
+    --aegis-danger-bg:  #fef2f2;
+    --aegis-warning:    #f59e0b;
+    --aegis-warning-bg: #fffbeb;
+    --aegis-info:       #0ea5e9;
+    --aegis-info-bg:    #f0f9ff;
+
+    /* Shadows */
+    --shadow-xs: 0 1px 2px rgba(0,0,0,0.04);
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+    --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.06), 0 2px 4px -1px rgba(0,0,0,0.04);
+    --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.07), 0 4px 6px -2px rgba(0,0,0,0.04);
+    --shadow-xl: 0 20px 25px -5px rgba(0,0,0,0.07);
+    --shadow-green: 0 4px 12px rgba(22,163,74,0.22);
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
+/* ─────────────────────────────────────────────
+   Base Reset
+───────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+    font-family: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+    background: var(--aegis-bg);
+    color: var(--aegis-text);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    line-height: 1.5;
 }
 
-/* frontend/app/globals.css */
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
+/* ─────────────────────────────────────────────
+   Scrollbar
+───────────────────────────────────────────── */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 999px; }
+::-webkit-scrollbar-thumb:hover { background: #9ca3af; }
+
+/* ─────────────────────────────────────────────
+   Sidebar — Responsive Collapsible
+───────────────────────────────────────────── */
+
+/* Base: fixed on mobile, always 256px */
+.sidebar-root {
+    position: fixed;
+    inset-block: 0;
+    left: 0;
+    z-index: 30;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    width: 256px;
+    background: var(--sidebar-bg);
+    border-right: 1px solid var(--sidebar-border);
+    overflow: hidden;
+    flex-shrink: 0;
+    transition: transform 0.3s cubic-bezier(0.4,0,0.2,1),
+                width   0.25s cubic-bezier(0.4,0,0.2,1);
 }
 
-html, body {
-  height: 100%;
+.sidebar-root.mobile-closed { transform: translateX(-100%); }
+.sidebar-root.mobile-open   { transform: translateX(0); }
+
+/* Desktop: sticky in flex flow, never slides out */
+@media (min-width: 1024px) {
+    .sidebar-root {
+        position: sticky;
+        top: 0;
+        transform: translateX(0) !important;
+        align-self: flex-start;
+    }
+    .sidebar-root.desktop-collapsed { width: 64px; }
 }
+
+/* Hide labels & text when collapsed */
+.sidebar-label {
+    display: inline-block;
+    overflow: hidden;
+    white-space: nowrap;
+    opacity: 1;
+    max-width: 200px;
+    transition: opacity 0.2s ease, max-width 0.25s ease;
+}
+.sidebar-root.desktop-collapsed .sidebar-label {
+    opacity: 0;
+    max-width: 0;
+}
+
+/* ─────────────────────────────────────────────
+   Keyframe Animations
+───────────────────────────────────────────── */
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+@keyframes scaleIn {
+    from { opacity: 0; transform: scale(0.96); }
+    to   { opacity: 1; transform: scale(1); }
+}
+@keyframes slideInRight {
+    from { opacity: 0; transform: translateX(16px); }
+    to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes shimmer {
+    0%   { background-position: -200% 0; }
+    100% { background-position:  200% 0; }
+}
+@keyframes pulseDot {
+    0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(22,163,74,0.35); }
+    50%       { opacity: 0.85; box-shadow: 0 0 0 4px rgba(22,163,74,0); }
+}
+@keyframes toastSlideIn {
+    from { opacity: 0; transform: translateX(110%); }
+    to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes toastSlideOut {
+    from { opacity: 1; transform: translateX(0); }
+    to   { opacity: 0; transform: translateX(110%); }
+}
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* ─────────────────────────────────────────────
+   Animation Utility Classes
+───────────────────────────────────────────── */
+.animate-fade-in-up  { animation: fadeInUp  0.4s cubic-bezier(0.16,1,0.3,1) forwards; }
+.animate-fade-in     { animation: fadeIn    0.3s ease forwards; }
+.animate-scale-in    { animation: scaleIn   0.25s cubic-bezier(0.16,1,0.3,1) forwards; }
+.animate-slide-right { animation: slideInRight 0.3s cubic-bezier(0.16,1,0.3,1) forwards; }
+.animate-toast-in    { animation: toastSlideIn  0.4s cubic-bezier(0.16,1,0.3,1) forwards; }
+.animate-toast-out   { animation: toastSlideOut 0.3s ease forwards; }
+.animate-spin        { animation: spin 0.8s linear infinite; }
+
+.animate-shimmer {
+    background: linear-gradient(90deg, #f1f5f9 25%, #e8edf2 50%, #f1f5f9 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.6s infinite;
+}
+.animate-pulse-dot { animation: pulseDot 2.2s ease-in-out infinite; }
+
+/* Stagger delays */
+.anim-delay-100 { animation-delay: 0.10s; opacity: 0; }
+.anim-delay-200 { animation-delay: 0.20s; opacity: 0; }
+.anim-delay-300 { animation-delay: 0.30s; opacity: 0; }
+.anim-delay-400 { animation-delay: 0.40s; opacity: 0; }
+.anim-delay-500 { animation-delay: 0.50s; opacity: 0; }
+.anim-delay-600 { animation-delay: 0.60s; opacity: 0; }

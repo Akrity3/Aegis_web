@@ -459,7 +459,7 @@ function UserModal({
                                     type="text"
                                     value={form.lastName}
                                     onChange={set("lastName")}
-                                    placeholder="Doe"
+                                    placeholder="Rai"
                                     disabled={loading}
                                     style={errors.lastName ? inputErrorStyle : inputStyle}
                                     onFocus={(e) => { if (!errors.lastName) (e.target as HTMLInputElement).style.borderColor = "#16a34a"; }}
@@ -475,7 +475,7 @@ function UserModal({
                                 type="text"
                                 value={form.username}
                                 onChange={set("username")}
-                                placeholder="johndoe"
+                                placeholder="your_username"
                                 disabled={loading}
                                 style={errors.username ? inputErrorStyle : inputStyle}
                                 onFocus={(e) => { if (!errors.username) (e.target as HTMLInputElement).style.borderColor = "#16a34a"; }}
@@ -490,7 +490,7 @@ function UserModal({
                                 type="email"
                                 value={form.email}
                                 onChange={set("email")}
-                                placeholder="john@example.com"
+                                placeholder="abc@gmail.com"
                                 disabled={loading}
                                 style={errors.email ? inputErrorStyle : inputStyle}
                                 onFocus={(e) => { if (!errors.email) (e.target as HTMLInputElement).style.borderColor = "#16a34a"; }}
