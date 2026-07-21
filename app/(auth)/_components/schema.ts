@@ -4,7 +4,10 @@ export const loginSchema = z.object({
   email: z
     .string()
     .trim()
-    .email("Enter a valid email address"),
+    .email("Enter a valid email address")
+    .refine((email) => email.toLowerCase().endsWith("@gmail.com"), {
+      message: "Only Gmail addresses are allowed",
+    }),
   password: z.string().min(1, "Password is required"),
 });
 
@@ -27,12 +30,14 @@ export const registerSchema = z
     email: z
       .string()
       .trim()
-      .email("Enter a valid email address"),
+      .email("Enter a valid email address")
+      .refine((email) => email.toLowerCase().endsWith("@gmail.com"), {
+        message: "Only Gmail addresses are allowed",
+      }),
     phoneNumber: z
       .string()
       .trim()
-      .min(7, "Phone number is required")
-      .regex(/^\+?[\d\s\-()]{7,15}$/, "Enter a valid phone number"),
+      .regex(/^\d{10}$/, "Phone number must contain 10 digits"),
     password: z
       .string()
       .min(8, "Password must be at least 8 characters")

@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "../_components/ToastContext";
 import ConfirmModal from "../_components/ConfirmModal";
-import { Contact, getContacts, addContact, updateContact, deleteContact } from "@/lib/api/contact";
+import { Contact, getContacts, addContact, updateContact, deleteContact, type CreateContactPayload, type UpdateContactPayload } from "@/lib/api/contact";
 import ContactList from "./_components/ContactList";
 import ContactModal from "./_components/ContactModal";
 
@@ -119,13 +119,13 @@ export default function EmergencyContactsPage() {
     };
 
     // Handle modal save
-    const handleModalSave = async (data: any) => {
+    const handleModalSave = async (data: CreateContactPayload | UpdateContactPayload) => {
         setModalLoading(true);
         setModalError(undefined);
 
         try {
             if (modalMode === "add") {
-                const response = await addContact(data);
+                const response = await addContact(data as CreateContactPayload);
                 if (response.success) {
                     showToast("Contact added successfully!", "success");
                     setModalOpen(false);
@@ -134,7 +134,7 @@ export default function EmergencyContactsPage() {
                     setModalError("Failed to add contact");
                 }
             } else {
-                const response = await updateContact(selectedContact!._id, data);
+                const response = await updateContact(selectedContact!._id, data as UpdateContactPayload);
                 if (response.success) {
                     showToast("Contact updated successfully!", "success");
                     setModalOpen(false);
