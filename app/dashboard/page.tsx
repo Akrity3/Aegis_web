@@ -2,9 +2,16 @@
 
 import { useAuth, buildAvatarUrl } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import StatCard from "./_components/StatCard";
 import { SkeletonWelcome, SkeletonStatGrid } from "./_components/SkeletonLoader";
 import type { User } from "@/context/AuthContext";
+import { useEffect, useState, useCallback } from "react";
+import { useToast } from "./_components/ToastContext";
+import { getMyAlerts } from "@/lib/api/alert";
+import { getMyIncidents } from "@/lib/api/incident";
+import { getUnreadCount } from "@/lib/api/notification";
+import { getSafetyCircle } from "@/lib/api/safetyCircle";
 
 // ─────────────────────────────────────────────
 // Helpers
@@ -103,6 +110,15 @@ function LockIcon() {
         </svg>
     );
 }
+function SOSIcon() {
+    return (
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M12 2l7 4v5c0 5.25-3.5 9.74-7 11-3.5-1.26-7-5.75-7-11V6l7-4z" />
+            <path d="M12 8v4" />
+            <path d="M12 16h.01" />
+        </svg>
+    );
+}
 function ContactsIcon() {
     return (
         <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -143,6 +159,42 @@ function CheckCircleIcon() {
         <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
             <polyline points="22 4 12 14.01 9 11.01" />
+        </svg>
+    );
+}
+function AlertIcon() {
+    return (
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M12 2l7 4v5c0 5.25-3.5 9.74-7 11-3.5-1.26-7-5.75-7-11V6l7-4z" />
+            <path d="M12 8v4" />
+            <path d="M12 16h.01" />
+        </svg>
+    );
+}
+function IncidentIcon() {
+    return (
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+            <line x1="12" y1="9" x2="12" y2="13" />
+            <line x1="12" y1="17" x2="12.01" y2="17" />
+        </svg>
+    );
+}
+function BellIcon() {
+    return (
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+            <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+        </svg>
+    );
+}
+function UsersIcon() {
+    return (
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+            <circle cx="9" cy="7" r="4" />
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+            <path d="M16 3.13a4 4 0 0 1 0 7.75" />
         </svg>
     );
 }
@@ -245,12 +297,55 @@ function ProfileCompletionBar({ pct }: { pct: number }) {
 // ─────────────────────────────────────────────
 export default function DashboardPage() {
     const { user, loading, picVersion } = useAuth();
+    const { showToast } = useToast();
+
+    const [activeAlerts, setActiveAlerts] = useState(0);
+    const [myIncidents, setMyIncidents] = useState(0);
+    const [unreadNotifications, setUnreadNotifications] = useState(0);
+    const [safetyCircleMembers, setSafetyCircleMembers] = useState(0);
+    const [statsLoading, setStatsLoading] = useState(true);
 
     const completion = user ? getProfileCompletion(user) : 0;
     const avatarUrl  = buildAvatarUrl(user?.profilePicture, picVersion);
     const initials   = user
         ? `${user.firstName?.[0] || ""}${user.lastName?.[0] || ""}`.toUpperCase() || "U"
         : "U";
+
+    // Fetch dashboard stats
+    const fetchStats = useCallback(async () => {
+        setStatsLoading(true);
+        try {
+            const [alertsResponse, incidentsResponse, notificationsResponse, safetyCircleResponse] = await Promise.all([
+                getMyAlerts().catch(() => ({ success: false, data: [] })),
+                getMyIncidents().catch(() => ({ success: false, data: [] })),
+                getUnreadCount().catch(() => ({ success: false, data: { count: 0 } })),
+                getSafetyCircle().catch(() => ({ success: false, data: [] })),
+            ]);
+
+            if (alertsResponse.success) {
+                setActiveAlerts(alertsResponse.data.filter((a: any) => a.status === "active").length);
+            }
+            if (incidentsResponse.success) {
+                setMyIncidents(incidentsResponse.data.length);
+            }
+            if (notificationsResponse.success) {
+                setUnreadNotifications(notificationsResponse.data?.count || 0);
+            }
+            if (safetyCircleResponse.success) {
+                setSafetyCircleMembers(safetyCircleResponse.data.length);
+            }
+        } catch (error) {
+            // Silently fail stats fetch
+        } finally {
+            setStatsLoading(false);
+        }
+    }, []);
+
+    useEffect(() => {
+        if (!loading && user) {
+            fetchStats();
+        }
+    }, [loading, user, fetchStats]);
 
     return (
         <div style={{ maxWidth: 1200, margin: "0 auto" }}>
@@ -339,7 +434,7 @@ export default function DashboardPage() {
 
             {/* ── STAT CARDS ──────────────────────────── */}
             <p style={{ fontSize: 11, fontWeight: 700, color: "#9ca3af", letterSpacing: "1.1px", textTransform: "uppercase", marginBottom: 14 }}>
-                Account Overview
+                Safety Command Center
             </p>
 
             {loading ? (
@@ -354,74 +449,42 @@ export default function DashboardPage() {
                     }}
                 >
                     <StatCard
-                        title="Account Status"
-                        value="Active"
-                        description="Your account is in good standing"
-                        icon={<UserCheckIcon />}
-                        iconColor="#16a34a"
-                        badge="Verified"
-                        badgeVariant="success"
+                        title="Active Alerts"
+                        value={activeAlerts.toString()}
+                        description="Emergency alerts currently active"
+                        icon={<AlertIcon />}
+                        iconColor={activeAlerts > 0 ? "#dc2626" : "#16a34a"}
+                        badge={activeAlerts > 0 ? "Active" : "None"}
+                        badgeVariant={activeAlerts > 0 ? "danger" : "success"}
                         animClass="anim-delay-100"
                     />
 
-                    {/* Profile completion card (custom) */}
-                    <div
-                        className="animate-fade-in-up anim-delay-200"
-                        style={{
-                            background: "#fff",
-                            borderRadius: 18,
-                            border: "1px solid #E5E7EB",
-                            padding: "22px 24px",
-                            boxShadow: "var(--shadow-sm)",
-                            transition: "box-shadow 0.2s",
-                        }}
-                        onMouseEnter={(e) => ((e.currentTarget as HTMLDivElement).style.boxShadow = "var(--shadow-md)")}
-                        onMouseLeave={(e) => ((e.currentTarget as HTMLDivElement).style.boxShadow = "var(--shadow-sm)")}
-                    >
-                        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
-                            <div style={{
-                                width: 44, height: 44, borderRadius: 12,
-                                background: `${completion < 75 ? "#f59e0b" : "#16a34a"}12`,
-                                border: `1px solid ${completion < 75 ? "#f59e0b" : "#16a34a"}20`,
-                                display: "flex", alignItems: "center", justifyContent: "center",
-                                color: completion < 75 ? "#f59e0b" : "#16a34a",
-                            }}>
-                                <BarChartIcon />
-                            </div>
-                            <span style={{
-                                fontSize: 11, fontWeight: 600,
-                                padding: "3px 9px", borderRadius: 999,
-                                background: completion === 100 ? "#f0fdf4" : "#fffbeb",
-                                color: completion === 100 ? "#166534" : "#92400e",
-                                border: `1px solid ${completion === 100 ? "#bbf7d0" : "#fde68a"}`,
-                            }}>
-                                {completion === 100 ? "Complete" : "Incomplete"}
-                            </span>
-                        </div>
-                        <p style={{ fontSize: 11, fontWeight: 600, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.8px", marginBottom: 6 }}>
-                            Profile Completion
-                        </p>
-                        <p style={{ fontSize: 26, fontWeight: 800, color: "#0f172a" }}>{completion}%</p>
-                        <ProfileCompletionBar pct={completion} />
-                    </div>
+                    <StatCard
+                        title="My Incidents"
+                        value={myIncidents.toString()}
+                        description="Incidents you have reported"
+                        icon={<IncidentIcon />}
+                        iconColor="#f59e0b"
+                        animClass="anim-delay-200"
+                    />
 
                     <StatCard
-                        title="Security Status"
-                        value="Protected"
-                        description="Password and account secured"
-                        icon={<ShieldCheckIcon />}
-                        iconColor="#16a34a"
-                        badge="Secured"
-                        badgeVariant="success"
+                        title="Unread Notifications"
+                        value={unreadNotifications.toString()}
+                        description="Notifications requiring attention"
+                        icon={<BellIcon />}
+                        iconColor={unreadNotifications > 0 ? "#0ea5e9" : "#6b7280"}
+                        badge={unreadNotifications > 0 ? "New" : "None"}
+                        badgeVariant={unreadNotifications > 0 ? "warning" : "neutral"}
                         animClass="anim-delay-300"
                     />
 
                     <StatCard
-                        title="Member Since"
-                        value={user?.createdAt ? new Date(user.createdAt).getFullYear().toString() : "—"}
-                        description={formatMemberSince(user?.createdAt)}
-                        icon={<CalendarIcon />}
-                        iconColor="#0ea5e9"
+                        title="Safety Circle"
+                        value={safetyCircleMembers.toString()}
+                        description="Trusted contacts in your circle"
+                        icon={<UsersIcon />}
+                        iconColor="#16a34a"
                         animClass="anim-delay-400"
                     />
                 </div>
@@ -429,7 +492,54 @@ export default function DashboardPage() {
 
             {/* ── QUICK ACTIONS ──────────────────────── */}
             <p style={{ fontSize: 11, fontWeight: 700, color: "#9ca3af", letterSpacing: "1.1px", textTransform: "uppercase", marginBottom: 14 }}>
-                Quick Actions
+                Safety Quick Actions
+            </p>
+
+            <div
+                style={{
+                    display: "grid",
+                    gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))",
+                    gap: 16,
+                    marginBottom: 32,
+                }}
+            >
+                <QuickActionCard
+                    title="Emergency Alerts"
+                    description="Trigger SOS alerts and manage emergency situations."
+                    href="/dashboard/alerts"
+                    icon={<AlertIcon />}
+                    accentColor="#dc2626"
+                    animClass="anim-delay-400"
+                />
+                <QuickActionCard
+                    title="Report Incident"
+                    description="Report safety incidents to help your community."
+                    href="/dashboard/reports"
+                    icon={<IncidentIcon />}
+                    accentColor="#f59e0b"
+                    animClass="anim-delay-500"
+                />
+                <QuickActionCard
+                    title="Safety Circle"
+                    description="Manage trusted contacts in your safety circle."
+                    href="/dashboard/safety-circle"
+                    icon={<UsersIcon />}
+                    accentColor="#16a34a"
+                    animClass="anim-delay-600"
+                />
+                <QuickActionCard
+                    title="Safety Map"
+                    description="View community incidents on the interactive map."
+                    href="/dashboard/safety-map"
+                    icon={<BarChartIcon />}
+                    accentColor="#0ea5e9"
+                    animClass="anim-delay-700"
+                />
+            </div>
+
+            {/* ── ACCOUNT QUICK ACTIONS ───────────────── */}
+            <p style={{ fontSize: 11, fontWeight: 700, color: "#9ca3af", letterSpacing: "1.1px", textTransform: "uppercase", marginBottom: 14 }}>
+                Account Actions
             </p>
 
             <div
@@ -445,24 +555,8 @@ export default function DashboardPage() {
                     description="View your personal details, role, and account information."
                     href="/dashboard/me"
                     icon={<UserIcon />}
-                    accentColor="#16a34a"
+                    accentColor="#6b7280"
                     animClass="anim-delay-400"
-                />
-                <QuickActionCard
-                    title="Update Profile"
-                    description="Edit your name, phone number, gender, and profile photo."
-                    href="/dashboard/profile"
-                    icon={<PencilIcon />}
-                    accentColor="#15803d"
-                    animClass="anim-delay-500"
-                />
-                <QuickActionCard
-                    title="Change Password"
-                    description="Update your password and review account security settings."
-                    href="/dashboard/password"
-                    icon={<LockIcon />}
-                    accentColor="#475569"
-                    animClass="anim-delay-600"
                 />
                 <QuickActionCard
                     title="Emergency Contacts"
@@ -470,8 +564,90 @@ export default function DashboardPage() {
                     href="/dashboard/contacts"
                     icon={<ContactsIcon />}
                     accentColor="#16a34a"
+                    animClass="anim-delay-500"
+                />
+                <QuickActionCard
+                    title="Notifications"
+                    description="View your notifications and alerts."
+                    href="/dashboard/notifications"
+                    icon={<BellIcon />}
+                    accentColor="#0ea5e9"
+                    animClass="anim-delay-600"
+                />
+                <QuickActionCard
+                    title="Settings"
+                    description="Manage your account preferences and security."
+                    href="/dashboard/settings"
+                    icon={<LockIcon />}
+                    accentColor="#475569"
                     animClass="anim-delay-700"
                 />
+            </div>
+
+            {/* ── SOS QUICK ACTION ───────────────────── */}
+            <div
+                className="animate-fade-in-up anim-delay-800"
+                style={{
+                    background: "linear-gradient(135deg, #dc2626 0%, #b91c1c 55%, #991b1b 100%)",
+                    borderRadius: 18,
+                    padding: "24px 28px",
+                    marginBottom: 32,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    gap: 20,
+                    boxShadow: "0 4px 20px rgba(220,38,38,0.25)",
+                    position: "relative",
+                    overflow: "hidden",
+                }}
+            >
+                {/* Decorative radial tint */}
+                <div style={{
+                    position: "absolute", inset: 0, pointerEvents: "none",
+                    backgroundImage: "radial-gradient(ellipse at 75% 50%, rgba(255,255,255,0.08) 0%, transparent 60%)",
+                }} />
+
+                <div style={{ position: "relative", zIndex: 1 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 8 }}>
+                        <div style={{
+                            width: 48, height: 48, borderRadius: 12,
+                            background: "rgba(255,255,255,0.18)",
+                            display: "flex", alignItems: "center", justifyContent: "center",
+                            color: "#fff",
+                        }}>
+                            <SOSIcon />
+                        </div>
+                        <div>
+                            <h3 style={{ fontSize: 18, fontWeight: 800, color: "#fff", marginBottom: 2 }}>
+                                Emergency SOS
+                            </h3>
+                            <p style={{ fontSize: 12, color: "rgba(255,255,255,0.7)" }}>
+                                Trigger emergency alert to notify contacts
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <Link
+                    href="/dashboard/alerts"
+                    style={{
+                        position: "relative", zIndex: 1,
+                        padding: "12px 24px",
+                        borderRadius: 12,
+                        background: "#fff",
+                        color: "#dc2626",
+                        fontSize: 14,
+                        fontWeight: 700,
+                        textDecoration: "none",
+                        boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+                        transition: "all 0.15s",
+                        flexShrink: 0,
+                    }}
+                    onMouseEnter={(e) => (e.currentTarget.style.transform = "translateY(-2px)")}
+                    onMouseLeave={(e) => (e.currentTarget.style.transform = "translateY(0)")}
+                >
+                    Trigger SOS
+                </Link>
             </div>
 
             {/* ── RECENT ACTIVITY ────────────────────── */}

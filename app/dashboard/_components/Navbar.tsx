@@ -11,6 +11,15 @@ const PAGE_TITLES: Record<string, { title: string; subtitle: string }> = {
     "/dashboard/me":       { title: "My Profile",      subtitle: "View your personal account details" },
     "/dashboard/profile":  { title: "Update Profile",  subtitle: "Manage your personal information" },
     "/dashboard/password": { title: "Security Center", subtitle: "Change your password and manage security" },
+    "/dashboard/contacts": { title: "Emergency Contacts", subtitle: "Manage your trusted emergency contacts" },
+    "/dashboard/alerts":   { title: "Emergency Alerts", subtitle: "Trigger and manage SOS alerts" },
+    "/dashboard/reports":  { title: "Report Incident",  subtitle: "Report a safety incident to help your community" },
+    "/dashboard/my-reports": { title: "My Reports",     subtitle: "View your incident report history" },
+    "/dashboard/notifications": { title: "Notifications", subtitle: "View your notifications and alerts" },
+    "/dashboard/activity": { title: "Activity History", subtitle: "Track your account activity" },
+    "/dashboard/safety-circle": { title: "Safety Circle", subtitle: "Manage your trusted safety circle members" },
+    "/dashboard/safety-map": { title: "Safety Map", subtitle: "View community-reported incidents on the map" },
+    "/dashboard/settings": { title: "Settings", subtitle: "Manage your account preferences" },
 };
 
 // Inline icons
