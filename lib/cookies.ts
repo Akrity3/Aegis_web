@@ -7,7 +7,7 @@ const TOKEN_KEY = "auth_token";
 export async function setTokenCookie(token: string) {
     const cookieStore = await cookies();
     cookieStore.set({
-        name: "auth_token",
+        name: TOKEN_KEY,
         value: token,
         httpOnly: true,
         sameSite: "lax",
@@ -17,7 +17,7 @@ export async function setTokenCookie(token: string) {
 
 export async function getTokenCookie() {
     const cookieStore = await cookies();
-    return cookieStore.get("auth_token")?.value;
+    return cookieStore.get(TOKEN_KEY)?.value;
 }
 
 export async function storeUserData(userData: Record<string, unknown>) {
@@ -39,6 +39,6 @@ export async function getUserData() {
 
 export async function clearAuthCookies() {
     const cookieStore = await cookies();
-    cookieStore.delete("auth_token");
+    cookieStore.delete(TOKEN_KEY);
     cookieStore.delete("user_data");
 }
