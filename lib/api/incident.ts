@@ -86,3 +86,34 @@ export async function getPublicIncidents(): Promise<IncidentsResponse> {
     const response = await axiosInstance.get<IncidentsResponse>("/api/v1/incidents/public");
     return response.data;
 }
+
+/**
+ * Get nearby incidents within a radius
+ */
+export async function getNearbyIncidents(
+    latitude: number,
+    longitude: number,
+    maxDistance: number = 10
+): Promise<IncidentsResponse> {
+    const response = await axiosInstance.get<IncidentsResponse>("/api/v1/incidents/nearby", {
+        params: { latitude, longitude, maxDistance },
+    });
+    return response.data;
+}
+
+/**
+ * Get risk zones grouped by incident category within a radius
+ */
+export async function getRiskZones(
+    latitude: number,
+    longitude: number,
+    maxDistance: number = 10
+): Promise<{ success: boolean; data: Record<string, any>; message?: string }> {
+    const response = await axiosInstance.get<{ success: boolean; data: Record<string, any>; message?: string }>(
+        "/api/v1/incidents/risk-zones",
+        {
+            params: { latitude, longitude, maxDistance },
+        }
+    );
+    return response.data;
+}
