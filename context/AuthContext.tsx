@@ -58,14 +58,6 @@ export function buildAvatarUrl(
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-/** Returns true if the auth_token cookie exists in the browser. */
-function hasAuthCookie(): boolean {
-    if (typeof document === "undefined") return false;
-    return document.cookie
-        .split(";")
-        .some((c) => c.trim().startsWith("auth_token="));
-}
-
 /** Read user_data from cookie on client side */
 function getUserDataFromCookie(): User | null {
     if (typeof document === "undefined") return null;
@@ -116,12 +108,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
 
         // No cookie data, try API
-        if (!hasAuthCookie()) {
-            setUser(null);
-            setLoading(false);
-            return;
-        }
-
         try {
             const res = await axiosInstance.get("/api/v1/auth/whoami");
             if (res.data?.success) {

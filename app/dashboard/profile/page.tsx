@@ -164,6 +164,7 @@ export default function UpdateProfilePage() {
     // Track any dirty state (form fields OR new file)
     useEffect(() => {
         setFormDirty(rhfDirty || file !== null);
+        // eslint-disable-next-line react-hooks/exhaustive-deps, react-hooks/set-state-in-effect
     }, [rhfDirty, file]);
 
     // ── Pre-fill form once user is available ──

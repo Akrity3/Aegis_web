@@ -3,18 +3,22 @@
 import { useState, useTransition, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { GoogleLogin } from "@react-oauth/google";
 import { loginSchema, LoginFormValues } from "./schema";
-import { handleLoginUser } from "@/lib/actions/auth-action";
+import { handleGoogleLoginUser, handleLoginUser } from "@/lib/actions/auth-action";
 
-export default function LoginForm() {
-  const router = useRouter();
+interface LoginFormProps {
+  showGoogleButton?: boolean;
+}
+
+export default function LoginForm({ showGoogleButton = true }: LoginFormProps) {
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [remember, setRemember] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
 
   const {
     register,
@@ -47,6 +51,53 @@ export default function LoginForm() {
     });
   };
 
+  const handleGoogleSuccess = async (credentialResponse: any) => {
+    setError("");
+    setGoogleLoading(true);
+    
+    try {
+      const idToken = credentialResponse?.credential;
+      if (!idToken) {
+        setError("Google authentication failed (missing token)");
+        return;
+      }
+
+      const result = await handleGoogleLoginUser(idToken);
+
+      if (result.success) {
+        // If user is new, redirect to register page with Google profile data
+        if (result.isNewUser && result.googleProfile) {
+          const params = new URLSearchParams({
+            email: result.googleProfile.email,
+            firstName: result.googleProfile.firstName,
+            lastName: result.googleProfile.lastName,
+            profilePicture: result.googleProfile.profilePicture,
+          });
+          window.location.href = `/register?${params.toString()}`;
+        } else {
+          // Existing user, redirect to dashboard
+          const userRole = result.data?.role;
+          if (userRole === "admin") {
+            window.location.href = "/admin";
+          } else {
+            window.location.href = "/dashboard";
+          }
+        }
+      } else {
+        setError(result.message || "Google authentication failed");
+      }
+    } catch (err: unknown) {
+      const e = err as { message?: string };
+      setError(e?.message || "Google authentication failed");
+    } finally {
+      setGoogleLoading(false);
+    }
+  };
+
+  const handleGoogleError = () => {
+    setError("Google authentication was cancelled or failed");
+  };
+
   const inputBase = {
     width: "100%",
     boxSizing: "border-box" as const,
@@ -70,7 +121,11 @@ export default function LoginForm() {
     <div style={{
       display: "flex", 
       minHeight: "100vh", 
-      background: "#F8FAFC",
+      background:
+        "radial-gradient(1200px 600px at 10% 10%, rgba(22, 163, 74, 0.32), rgba(193, 220, 202, 0))," +
+        "radial-gradient(900px 520px at 90% 15%, rgba(15, 23, 42, 0.10), rgba(193, 220, 202, 0))," +
+        "radial-gradient(900px 520px at 85% 92%, rgba(21, 128, 61, 0.16), rgba(193, 220, 202, 0))," +
+        "linear-gradient(180deg, #bfd9c7 0%, #d7e9dd 100%)",
       fontFamily: "'Inter', 'Roboto', 'Outfit', sans-serif",
       alignItems: "center",
       justifyContent: "center",
@@ -79,17 +134,18 @@ export default function LoginForm() {
       <div style={{
         width: "100%", 
         maxWidth: "480px", 
-        background: "#FFFFFF",
+        background: "linear-gradient(180deg, rgba(255,255,255,0.99), rgba(233,247,238,0.96))",
         padding: "52px 48px",
         borderRadius: "18px",
-        border: "1px solid #E5E7EB",
-        boxShadow: "0 10px 40px -10px rgba(0,0,0,0.06)",
+        border: "1px solid rgba(187, 247, 208, 0.9)",
+        boxShadow: "0 28px 80px -24px rgba(15,23,42,0.34), 0 10px 28px rgba(22,163,74,0.12)",
+        transform: "translateY(-6px)",
       }}>
         {/* Logo Section */}
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginBottom: "40px" }}>
           <Image src="/logo.png" alt="Aegis+ Logo" width={64} height={64} style={{ borderRadius: "14px", objectFit: "contain", marginBottom: "16px" }} />
           <h1 style={{ color: "#111827", fontWeight: 800, fontSize: "24px", letterSpacing: "-0.5px", margin: "0 0 6px 0" }}>
-            Aegis<span style={{ color: "#16A34A" }}>+</span>
+            Aegis<span style={{ color: "#EF4444" }}>+</span>
           </h1>
           <p style={{ color: "#6B7280", fontSize: "14.5px", margin: 0, fontWeight: 500 }}>
             Protecting Nepal, One Alert at a Time
@@ -133,7 +189,7 @@ export default function LoginForm() {
               </span>
               <input
                 type="email"
-                placeholder="you@example.com"
+                placeholder="you@gmail.com"
                 {...register("email")}
                 style={errors.email ? { ...inputError } : { ...inputBase }}
                 onFocus={e => { if (!errors.email) { e.target.style.borderColor = "#22C55E"; e.target.style.background = "#FFFFFF"; e.target.style.boxShadow = "0 0 0 3px rgba(34, 197, 94, 0.1)"; } }}
@@ -153,9 +209,9 @@ export default function LoginForm() {
           <div style={{ marginBottom: errors.password ? "8px" : "28px" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
               <label style={{ fontSize: "14px", fontWeight: 600, color: "#111827" }}>Password</label>
-              <a href="#" style={{ fontSize: "13.5px", color: "#16A34A", textDecoration: "none", fontWeight: 600, transition: "color 0.2s" }} onMouseEnter={e => e.currentTarget.style.color = "#15803D"} onMouseLeave={e => e.currentTarget.style.color = "#16A34A"}>
+              <Link href="/forgot-password" style={{ fontSize: "13.5px", color: "#16A34A", textDecoration: "none", fontWeight: 600, transition: "color 0.2s" }} onMouseEnter={e => e.currentTarget.style.color = "#15803D"} onMouseLeave={e => e.currentTarget.style.color = "#16A34A"}>
                 Forgot password?
-              </a>
+              </Link>
             </div>
             <div style={{ position: "relative" }}>
               <span style={{ position: "absolute", left: "16px", top: "50%", transform: "translateY(-50%)", color: errors.password ? "#EF4444" : "#9CA3AF", display: "flex" }}>
@@ -230,31 +286,47 @@ export default function LoginForm() {
           </button>
         </form>
 
-        <div style={{ display: "flex", alignItems: "center", gap: "16px", marginBottom: "24px" }}>
-          <div style={{ flex: 1, height: "1px", background: "#E5E7EB" }} />
-          <span style={{ color: "#9CA3AF", fontSize: "13px", fontWeight: 600, letterSpacing: "1px" }}>OR</span>
-          <div style={{ flex: 1, height: "1px", background: "#E5E7EB" }} />
-        </div>
+        {showGoogleButton && (
+          <>
+            <div style={{ display: "flex", alignItems: "center", gap: "16px", marginBottom: "24px" }}>
+              <div style={{ flex: 1, height: "1px", background: "#E5E7EB" }} />
+              <span style={{ color: "#9CA3AF", fontSize: "13px", fontWeight: 600, letterSpacing: "1px" }}>OR</span>
+              <div style={{ flex: 1, height: "1px", background: "#E5E7EB" }} />
+            </div>
 
-        <button type="button" style={{
-          width: "100%", padding: "15px",
-          background: "#FFFFFF", border: "1.5px solid #E5E7EB",
-          borderRadius: "12px", cursor: "pointer", fontSize: "15.5px",
-          fontWeight: 600, color: "#374151",
-          display: "flex", alignItems: "center", justifyContent: "center", gap: "12px",
-          marginBottom: "36px",
-          transition: "background 0.2s, border-color 0.2s"
-        }}
-        onMouseEnter={e => { e.currentTarget.style.background = "#F9FAFB"; e.currentTarget.style.borderColor = "#D1D5DB"; }}
-        onMouseLeave={e => { e.currentTarget.style.background = "#FFFFFF"; e.currentTarget.style.borderColor = "#E5E7EB"; }}>
-          <svg width="20" height="20" viewBox="0 0 48 48">
-            <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z" />
-            <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z" />
-            <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z" />
-            <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.29-8.16 2.29-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z" />
-          </svg>
-          Continue with Google
-        </button>
+            <div style={{ marginBottom: "36px", display: "flex", justifyContent: "center" }}>
+              {googleLoading ? (
+                <div style={{
+                  width: "100%", padding: "15px",
+                  background: "#FFFFFF", border: "1.5px solid #E5E7EB",
+                  borderRadius: "12px", fontSize: "15.5px",
+                  fontWeight: 600, color: "#374151",
+                  display: "flex", alignItems: "center", justifyContent: "center", gap: "12px",
+                  opacity: 0.7
+                }}>
+                  <svg width="20" height="20" viewBox="0 0 48 48">
+                    <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z" />
+                    <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z" />
+                    <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z" />
+                    <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.29-8.16 2.29-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z" />
+                  </svg>
+                  Signing in with Google...
+                </div>
+              ) : (
+                <div style={{ width: "100%" }}>
+                  <GoogleLogin
+                    onSuccess={handleGoogleSuccess}
+                    onError={handleGoogleError}
+                    useOneTap
+                    theme="outline"
+                    size="large"
+                    text="signin_with"
+                  />
+                </div>
+              )}
+            </div>
+          </>
+        )}
 
         <p style={{ textAlign: "center", fontSize: "15px", color: "#6B7280", margin: 0 }}>
           Don&apos;t have an account?{" "}

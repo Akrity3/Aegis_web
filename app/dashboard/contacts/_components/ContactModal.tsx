@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -11,7 +11,7 @@ import { Contact } from "@/lib/api/contact";
 // ─────────────────────────────────────────────
 const contactSchema = z.object({
     name: z.string().min(2, "Name must be at least 2 characters").max(50, "Name must be less than 50 characters"),
-    phoneNumber: z.string().min(5, "Phone number must be valid").max(20, "Phone number must be less than 20 characters"),
+    phoneNumber: z.string().regex(/^\d{10}$/, "Phone number must contain 10 digits"),
     relation: z.string().optional(),
     isPrimary: z.boolean().optional(),
 });
@@ -61,44 +61,39 @@ export default function ContactModal({
     loading,
     serverError,
 }: ContactModalProps) {
-    const [form, setForm] = useState<ContactFormValues>({
-        name: "",
-        phoneNumber: "",
-        relation: "Family",
-        isPrimary: false,
-    });
-
     const {
         register,
         handleSubmit,
         reset,
+        setValue,
         formState: { errors },
     } = useForm<ContactFormValues>({
         resolver: zodResolver(contactSchema),
-        defaultValues: form,
+        defaultValues: {
+            name: "",
+            phoneNumber: "",
+            relation: "Family",
+            isPrimary: false,
+        },
     });
 
     // Populate form when editing
     useEffect(() => {
         if (open) {
             if (mode === "edit" && initialData) {
-                const formData = {
+                reset({
                     name: initialData.name,
                     phoneNumber: initialData.phoneNumber,
                     relation: initialData.relation || "Family",
                     isPrimary: initialData.isPrimary,
-                };
-                setForm(formData);
-                reset(formData);
+                });
             } else {
-                const defaultData = {
+                reset({
                     name: "",
                     phoneNumber: "",
                     relation: "Family",
                     isPrimary: false,
-                };
-                setForm(defaultData);
-                reset(defaultData);
+                });
             }
         }
     }, [open, mode, initialData, reset]);
@@ -118,18 +113,6 @@ export default function ContactModal({
     }, [open, loading, onClose]);
 
     if (!open) return null;
-
-    const setField = (field: keyof ContactFormValues) => (
-        e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
-    ) => {
-        setForm((prev) => ({ ...prev, [field]: e.target.value }));
-    };
-
-    const setCheckbox = (field: keyof ContactFormValues) => (
-        e: React.ChangeEvent<HTMLInputElement>
-    ) => {
-        setForm((prev) => ({ ...prev, [field]: e.target.checked }));
-    };
 
     const onSubmit = (data: ContactFormValues) => {
         onSave(data);
@@ -234,9 +217,7 @@ export default function ContactModal({
                             </label>
                             <input
                                 type="text"
-                                value={form.name}
                                 {...register("name")}
-                                onChange={setField("name")}
                                 placeholder="e.g., John Doe"
                                 disabled={loading}
                                 style={{
@@ -265,9 +246,7 @@ export default function ContactModal({
                             </label>
                             <input
                                 type="tel"
-                                value={form.phoneNumber}
                                 {...register("phoneNumber")}
-                                onChange={setField("phoneNumber")}
                                 placeholder="+977 98XXXXXXXX"
                                 disabled={loading}
                                 style={{
@@ -296,9 +275,7 @@ export default function ContactModal({
                             </label>
                             <div style={{ position: "relative" }}>
                                 <select
-                                    value={form.relation}
                                     {...register("relation")}
-                                    onChange={setField("relation")}
                                     disabled={loading}
                                     style={{
                                         width: "100%",
@@ -335,9 +312,7 @@ export default function ContactModal({
                             <input
                                 type="checkbox"
                                 id="isPrimary"
-                                checked={form.isPrimary}
                                 {...register("isPrimary")}
-                                onChange={setCheckbox("isPrimary")}
                                 disabled={loading}
                                 style={{
                                     width: 18, height: 18,

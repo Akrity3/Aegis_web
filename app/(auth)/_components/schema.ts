@@ -4,8 +4,12 @@ export const loginSchema = z.object({
   email: z
     .string()
     .trim()
-    .email("Enter a valid email address"),
-  password: z.string().min(1, "Password is required"),
+    .min(1, "Please provide an email and password")
+    .email("Enter a valid email address")
+    .refine((email) => email.toLowerCase().endsWith("@gmail.com"), {
+      message: "Only Gmail addresses are allowed",
+    }),
+  password: z.string().min(1, "Please provide an email and password"),
 });
 
 export type LoginFormValues = z.infer<typeof loginSchema>;
@@ -27,17 +31,18 @@ export const registerSchema = z
     email: z
       .string()
       .trim()
-      .email("Enter a valid email address"),
+      .min(1, "Email is required")
+      .email("Enter a valid email address")
+      .refine((email) => email.toLowerCase().endsWith("@gmail.com"), {
+        message: "Only Gmail addresses are allowed",
+      }),
     phoneNumber: z
       .string()
       .trim()
-      .min(7, "Phone number is required")
-      .regex(/^\+?[\d\s\-()]{7,15}$/, "Enter a valid phone number"),
+      .regex(/^\d{10}$/, "Phone number must contain 10 digits"),
     password: z
       .string()
-      .min(8, "Password must be at least 8 characters")
-      .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
-      .regex(/[^a-zA-Z0-9]/, "Password must contain at least one special character"),
+      .min(6, "Password must be at least 6 characters"),
     confirmPassword: z.string().min(1, "Please confirm your password"),
     agreed: z.boolean().refine((val) => val === true, {
       message: "You must accept the terms and conditions",
