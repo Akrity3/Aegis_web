@@ -1,7 +1,7 @@
 "use server";
 
 import { LoginFormValues, RegisterFormValues } from "@/app/(auth)/_components/schema";
-import { login, register } from "@/lib/api/auth";
+import { googleLogin, login, register } from "@/lib/api/auth";
 import { setTokenCookie, storeUserData } from "@/lib/cookies";
 
 export const handleRegisterUser = async (data: RegisterFormValues) => {
@@ -63,6 +63,52 @@ export const handleLoginUser = async (data: LoginFormValues) => {
         return {
             success: false,
             message: err?.message || "Login failed",
+        };
+    }
+};
+
+export const handleGoogleLoginUser = async (idToken: string) => {
+    try {
+        const result = await googleLogin({ idToken });
+
+        // Existing user login
+        if (result?.success && !result?.isNewUser) {
+            const user = result.data;
+            const token = result.token;
+
+            if (token) {
+                await setTokenCookie(token);
+            }
+            if (user) {
+                await storeUserData(user);
+            }
+
+            return {
+                success: true,
+                isNewUser: false,
+                data: user,
+                token,
+            };
+        }
+
+        // New user: return Google profile to prefill registration
+        if (result?.success && result?.isNewUser) {
+            return {
+                success: true,
+                isNewUser: true,
+                googleProfile: result.googleProfile,
+            };
+        }
+
+        return {
+            success: false,
+            message: result?.message || "Google authentication failed",
+        };
+    } catch (error: unknown) {
+        const err = error as { message?: string };
+        return {
+            success: false,
+            message: err?.message || "Google authentication failed",
         };
     }
 };
