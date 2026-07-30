@@ -1,9 +1,54 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
 import { useAuth } from "@/context/AuthContext";
-import { useToast } from "../_components/ToastContext";
-import { getPublicIncidents, type Incident } from "@/lib/api/incident";
+import { type Incident } from "@/lib/api/incident";
+import dynamic from "next/dynamic";
+import { useState } from "react";
+
+// Dynamic import for LeafletMap (client-side only)
+const LeafletMap = dynamic(() => import("@/lib/components/map/LeafletMap"), {
+    ssr: false,
+    loading: () => (
+        <div
+            style={{
+                height: 450,
+                borderRadius: 16,
+                background: "#f9fafb",
+                border: "1px solid #E5E7EB",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+            }}
+        >
+            <div
+                style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    gap: 12,
+                }}
+            >
+                <svg
+                    width="32"
+                    height="32"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    className="animate-spin"
+                    style={{ color: "#16a34a" }}
+                >
+                    <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+                    <path d="M3 3v5h5" />
+                </svg>
+                <span style={{ fontSize: 14, color: "#6b7280" }}>
+                    Loading map...
+                </span>
+            </div>
+        </div>
+    ),
+});
 
 // ─────────────────────────────────────────────
 // Icons
@@ -56,34 +101,9 @@ function getCategoryColor(category: string): string {
 // ─────────────────────────────────────────────
 export default function SafetyMapPage() {
     const { loading: authLoading } = useAuth();
-    const { showToast } = useToast();
-
-    const [incidents, setIncidents] = useState<Incident[]>([]);
-    const [loading, setLoading] = useState(true);
     const [selectedIncident, setSelectedIncident] = useState<Incident | null>(null);
 
-    // Fetch public incidents
-    const fetchIncidents = useCallback(async () => {
-        setLoading(true);
-        try {
-            const response = await getPublicIncidents();
-            if (response.success) {
-                setIncidents(response.data);
-            }
-        } catch (error: unknown) {
-            const err = error as { response?: { data?: { message?: string } }; message?: string };
-            showToast(err?.response?.data?.message || err?.message || "Failed to fetch incidents", "error");
-        } finally {
-            setLoading(false);
-        }
-    }, [showToast]);
-
-    useEffect(() => {
-        fetchIncidents();
-        // eslint-disable-next-line react-hooks/exhaustive-deps, react-hooks/set-state-in-effect
-    }, [fetchIncidents]);
-
-    if (authLoading || loading) {
+    if (authLoading) {
         return (
             <div style={{ maxWidth: 900, margin: "0 auto" }}>
                 <div style={{ background: "#fff", borderRadius: 22, border: "1px solid #E5E7EB", padding: 32, boxShadow: "var(--shadow-sm)" }}>
@@ -156,7 +176,7 @@ export default function SafetyMapPage() {
                 >
                     <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                         <span style={{ fontSize: 12, fontWeight: 600, color: "#374151" }}>
-                            {incidents.length} Incident{incidents.length !== 1 ? "s" : ""}
+                            Interactive Safety Map
                         </span>
                     </div>
                 </div>
@@ -174,132 +194,7 @@ export default function SafetyMapPage() {
                         marginBottom: 20,
                     }}
                 >
-                    {/* Simple Map Placeholder */}
-                    <div
-                        style={{
-                            height: 450,
-                            borderRadius: 16,
-                            background: "#f0fdf4",
-                            border: "2px dashed #bbf7d0",
-                            display: "flex",
-                            flexDirection: "column",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            position: "relative",
-                        }}
-                    >
-                        <MapIcon />
-                        <p style={{ fontSize: 14, fontWeight: 600, color: "#166534", marginTop: 12 }}>
-                            Interactive Map Coming Soon
-                        </p>
-                        <p style={{ fontSize: 12, color: "#6b7280", marginTop: 4, textAlign: "center", maxWidth: 300 }}>
-                            Leaflet + OpenStreetMap integration will be added to display incidents on an interactive map.
-                        </p>
-
-                        {/* Incident markers preview */}
-                        <div style={{ position: "absolute", top: 20, right: 20, display: "flex", flexDirection: "column", gap: 8 }}>
-                            {incidents.slice(0, 5).map((incident) => (
-                                <div
-                                    key={incident._id}
-                                    onClick={() => setSelectedIncident(incident)}
-                                    style={{
-                                        width: 12,
-                                        height: 12,
-                                        borderRadius: "50%",
-                                        background: getCategoryColor(incident.category),
-                                        cursor: "pointer",
-                                        boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
-                                        transition: "transform 0.15s",
-                                    }}
-                                    onMouseEnter={(e) => {
-                                        (e.currentTarget as HTMLDivElement).style.transform = "scale(1.3)";
-                                    }}
-                                    onMouseLeave={(e) => {
-                                        (e.currentTarget as HTMLDivElement).style.transform = "scale(1)";
-                                    }}
-                                />
-                            ))}
-                        </div>
-                    </div>
-                </div>
-
-                {/* ── Incidents List ───────────────── */}
-                <div
-                    style={{
-                        background: "#fff",
-                        borderRadius: 22,
-                        border: "1px solid #E5E7EB",
-                        padding: "20px",
-                        boxShadow: "var(--shadow-sm)",
-                    }}
-                >
-                    <p style={{ fontSize: 13.5, fontWeight: 700, color: "#0f172a", marginBottom: 16 }}>
-                        Recent Incidents
-                    </p>
-                    {incidents.length === 0 ? (
-                        <div
-                            style={{
-                                padding: "32px 24px",
-                                textAlign: "center",
-                                borderRadius: 16,
-                                background: "#f9fafb",
-                            }}
-                        >
-                            <p style={{ fontSize: 14, color: "#6b7280", margin: 0 }}>
-                                No incidents reported yet.
-                            </p>
-                        </div>
-                    ) : (
-                        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                            {incidents.slice(0, 10).map((incident) => (
-                                <div
-                                    key={incident._id}
-                                    onClick={() => setSelectedIncident(incident)}
-                                    style={{
-                                        padding: "14px 16px",
-                                        borderRadius: 12,
-                                        border: "1.5px solid #E5E7EB",
-                                        background: "#fff",
-                                        cursor: "pointer",
-                                        transition: "all 0.15s",
-                                    }}
-                                    onMouseEnter={(e) => {
-                                        (e.currentTarget as HTMLDivElement).style.borderColor = "#bbf7d0";
-                                        (e.currentTarget as HTMLDivElement).style.background = "#f0fdf4";
-                                    }}
-                                    onMouseLeave={(e) => {
-                                        (e.currentTarget as HTMLDivElement).style.borderColor = "#E5E7EB";
-                                        (e.currentTarget as HTMLDivElement).style.background = "#fff";
-                                    }}
-                                >
-                                    <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                                        <div
-                                            style={{
-                                                width: 10,
-                                                height: 10,
-                                                borderRadius: "50%",
-                                                background: getCategoryColor(incident.category),
-                                                flexShrink: 0,
-                                            }}
-                                        />
-                                        <div style={{ flex: 1, minWidth: 0 }}>
-                                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
-                                                <p style={{ fontSize: 14, fontWeight: 700, color: "#0f172a", margin: 0 }}>
-                                                    {incident.category}
-                                                </p>
-                                                <span style={{ fontSize: 11, color: "#9ca3af", whiteSpace: "nowrap", marginLeft: 8 }}>
-                                                    {new Date(incident.reportedAt).toLocaleDateString()}
-                                                </span>
-                                            </div>
-                                            <p style={{ fontSize: 12, color: "#6b7280", margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                                                {incident.description}
-                                            </p>
-                                        </div>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    )}
+                    <LeafletMap onIncidentClick={setSelectedIncident} />
                 </div>
             </div>
 
