@@ -4,8 +4,9 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import StatCard from "../dashboard/_components/StatCard";
 import Link from "next/link";
-import axiosInstance from "@/lib/api/axios-instance";
+import { getAdminDashboard, getAdminAnalytics } from "@/lib/api/admin";
 import { API } from "@/lib/api/endpoints";
+import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 
 // ─────────────────────────────────────────────
 // Icons
@@ -62,6 +63,32 @@ function ReportsIcon() {
             <line x1="16" y1="13" x2="8" y2="13" />
             <line x1="16" y1="17" x2="8" y2="17" />
             <polyline points="10 9 9 9 8 9" />
+        </svg>
+    );
+}
+function IncidentsIcon() {
+    return (
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+            <line x1="12" y1="9" x2="12" y2="13" />
+            <line x1="12" y1="17" x2="12.01" y2="17" />
+        </svg>
+    );
+}
+function AlertsIcon() {
+    return (
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+            <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+        </svg>
+    );
+}
+function MapIcon() {
+    return (
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6" />
+            <line x1="8" y1="2" x2="8" y2="18" />
+            <line x1="16" y1="6" x2="16" y2="22" />
         </svg>
     );
 }
@@ -128,25 +155,49 @@ export default function AdminDashboardPage() {
         totalAdmins: 0,
         activeUsers: 0,
         inactiveUsers: 0,
+        totalIncidents: 0,
+        pendingIncidents: 0,
+        activeSOSAlerts: 0,
+        activitiesToday: 0,
     });
+    const [analytics, setAnalytics] = useState<any>(null);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        const fetchStats = async () => {
+        const fetchData = async () => {
             try {
-                const res = await axiosInstance.get(API.ADMIN.STATS);
-                if (res.data?.success) {
-                    setStats(res.data.data);
+                const [dashboardRes, analyticsRes] = await Promise.all([
+                    getAdminDashboard(),
+                    getAdminAnalytics()
+                ]);
+                
+                if (dashboardRes?.success) {
+                    setStats({
+                        totalUsers: dashboardRes.data.totalUsers,
+                        totalAdmins: dashboardRes.data.totalUsers - dashboardRes.data.activeUsers,
+                        activeUsers: dashboardRes.data.activeUsers,
+                        inactiveUsers: dashboardRes.data.blockedUsers,
+                        totalIncidents: dashboardRes.data.totalIncidents,
+                        pendingIncidents: dashboardRes.data.pendingIncidents,
+                        activeSOSAlerts: dashboardRes.data.activeSOSAlerts,
+                        activitiesToday: dashboardRes.data.activitiesToday,
+                    });
+                }
+                
+                if (analyticsRes?.success) {
+                    setAnalytics(analyticsRes.data);
                 }
             } catch (error) {
-                console.error("Failed to fetch stats:", error);
+                console.error("Failed to fetch data:", error);
             } finally {
                 setLoading(false);
             }
         };
 
-        fetchStats();
+        fetchData();
     }, []);
+
+    const COLORS = ['#16a34a', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6'];
 
     return (
         <div className="animate-fade-in-up" style={{ maxWidth: 1200, margin: "0 auto" }}>
@@ -266,7 +317,8 @@ export default function AdminDashboardPage() {
                         </div>
                     </Link>
 
-                    <div
+                    <Link
+                        href="/admin/incidents"
                         style={{
                             display: "flex",
                             alignItems: "center",
@@ -276,7 +328,18 @@ export default function AdminDashboardPage() {
                             background: "#ffffff",
                             border: "1px solid #e5e7eb",
                             boxShadow: "var(--shadow-sm)",
-                            opacity: 0.7,
+                            textDecoration: "none",
+                            transition: "all 0.2s",
+                        }}
+                        onMouseEnter={(e) => {
+                            e.currentTarget.style.borderColor = "#16a34a";
+                            e.currentTarget.style.boxShadow = "var(--shadow-md)";
+                            e.currentTarget.style.transform = "translateY(-2px)";
+                        }}
+                        onMouseLeave={(e) => {
+                            e.currentTarget.style.borderColor = "#e5e7eb";
+                            e.currentTarget.style.boxShadow = "var(--shadow-sm)";
+                            e.currentTarget.style.transform = "translateY(0)";
                         }}
                     >
                         <div
@@ -284,67 +347,29 @@ export default function AdminDashboardPage() {
                                 width: 44,
                                 height: 44,
                                 borderRadius: 11,
-                                background: "#f0f9ff",
-                                border: "1px solid #bae6fd",
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                color: "#0ea5e9",
-                                flexShrink: 0,
-                            }}
-                        >
-                            <AnalyticsIcon />
-                        </div>
-                        <div>
-                            <p style={{ fontSize: 14, fontWeight: 600, color: "#0f172a", marginBottom: 2 }}>
-                                Analytics
-                            </p>
-                            <p style={{ fontSize: 12, color: "#9ca3af" }}>
-                                Coming Soon
-                            </p>
-                        </div>
-                    </div>
-
-                    <div
-                        style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 14,
-                            padding: "18px 20px",
-                            borderRadius: 14,
-                            background: "#ffffff",
-                            border: "1px solid #e5e7eb",
-                            boxShadow: "var(--shadow-sm)",
-                            opacity: 0.7,
-                        }}
-                    >
-                        <div
-                            style={{
-                                width: 44,
-                                height: 44,
-                                borderRadius: 11,
-                                background: "#fffbeb",
+                                background: "#fef3c7",
                                 border: "1px solid #fde68a",
                                 display: "flex",
                                 alignItems: "center",
                                 justifyContent: "center",
-                                color: "#f59e0b",
+                                color: "#b45309",
                                 flexShrink: 0,
                             }}
                         >
-                            <ReportsIcon />
+                            <IncidentsIcon />
                         </div>
                         <div>
                             <p style={{ fontSize: 14, fontWeight: 600, color: "#0f172a", marginBottom: 2 }}>
-                                Reports
+                                Manage Incidents
                             </p>
-                            <p style={{ fontSize: 12, color: "#9ca3af" }}>
-                                Coming Soon
+                            <p style={{ fontSize: 12, color: "#6b7280" }}>
+                                Review and verify incident reports
                             </p>
                         </div>
-                    </div>
+                    </Link>
 
-                    <div
+                    <Link
+                        href="/admin/alerts"
                         style={{
                             display: "flex",
                             alignItems: "center",
@@ -354,7 +379,18 @@ export default function AdminDashboardPage() {
                             background: "#ffffff",
                             border: "1px solid #e5e7eb",
                             boxShadow: "var(--shadow-sm)",
-                            opacity: 0.7,
+                            textDecoration: "none",
+                            transition: "all 0.2s",
+                        }}
+                        onMouseEnter={(e) => {
+                            e.currentTarget.style.borderColor = "#16a34a";
+                            e.currentTarget.style.boxShadow = "var(--shadow-md)";
+                            e.currentTarget.style.transform = "translateY(-2px)";
+                        }}
+                        onMouseLeave={(e) => {
+                            e.currentTarget.style.borderColor = "#e5e7eb";
+                            e.currentTarget.style.boxShadow = "var(--shadow-sm)";
+                            e.currentTarget.style.transform = "translateY(0)";
                         }}
                     >
                         <div
@@ -362,28 +398,198 @@ export default function AdminDashboardPage() {
                                 width: 44,
                                 height: 44,
                                 borderRadius: 11,
-                                background: "#f1f5f9",
-                                border: "1px solid #e2e8f0",
+                                background: "#fee2e2",
+                                border: "1px solid #fecaca",
                                 display: "flex",
                                 alignItems: "center",
                                 justifyContent: "center",
-                                color: "#64748b",
+                                color: "#dc2626",
                                 flexShrink: 0,
                             }}
                         >
-                            <SettingsIcon />
+                            <AlertsIcon />
                         </div>
                         <div>
                             <p style={{ fontSize: 14, fontWeight: 600, color: "#0f172a", marginBottom: 2 }}>
-                                Settings
+                                SOS Alerts
                             </p>
-                            <p style={{ fontSize: 12, color: "#9ca3af" }}>
-                                Coming Soon
+                            <p style={{ fontSize: 12, color: "#6b7280" }}>
+                                Monitor and resolve emergency alerts
                             </p>
+                        </div>
+                    </Link>
+
+                    <Link
+                        href="/admin/safety-map"
+                        style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 14,
+                            padding: "18px 20px",
+                            borderRadius: 14,
+                            background: "#ffffff",
+                            border: "1px solid #e5e7eb",
+                            boxShadow: "var(--shadow-sm)",
+                            textDecoration: "none",
+                            transition: "all 0.2s",
+                        }}
+                        onMouseEnter={(e) => {
+                            e.currentTarget.style.borderColor = "#16a34a";
+                            e.currentTarget.style.boxShadow = "var(--shadow-md)";
+                            e.currentTarget.style.transform = "translateY(-2px)";
+                        }}
+                        onMouseLeave={(e) => {
+                            e.currentTarget.style.borderColor = "#e5e7eb";
+                            e.currentTarget.style.boxShadow = "var(--shadow-sm)";
+                            e.currentTarget.style.transform = "translateY(0)";
+                        }}
+                    >
+                        <div
+                            style={{
+                                width: 44,
+                                height: 44,
+                                borderRadius: 11,
+                                background: "#dbeafe",
+                                border: "1px solid #bfdbfe",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                color: "#1d4ed8",
+                                flexShrink: 0,
+                            }}
+                        >
+                            <MapIcon />
+                        </div>
+                        <div>
+                            <p style={{ fontSize: 14, fontWeight: 600, color: "#0f172a", marginBottom: 2 }}>
+                                Safety Map
+                            </p>
+                            <p style={{ fontSize: 12, color: "#6b7280" }}>
+                                View incidents and risk zones
+                            </p>
+                        </div>
+                    </Link>
+                </div>
+            </div>
+
+            {/* Charts Section */}
+            {analytics && (
+                <div style={{ marginBottom: 28 }}>
+                    <h2 style={{ fontSize: 17, fontWeight: 700, color: "#0f172a", marginBottom: 16 }}>
+                        Analytics Overview
+                    </h2>
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(500px, 1fr))", gap: 20 }}>
+                        {/* Incident Trends Chart */}
+                        <div
+                            style={{
+                                padding: "24px",
+                                borderRadius: 16,
+                                background: "#ffffff",
+                                border: "1px solid #e5e7eb",
+                                boxShadow: "var(--shadow-sm)",
+                            }}
+                        >
+                            <h3 style={{ fontSize: 14, fontWeight: 600, color: "#0f172a", marginBottom: 16 }}>
+                                Incident Trends (7 Days)
+                            </h3>
+                            <ResponsiveContainer width="100%" height={250}>
+                                <LineChart data={analytics.incidentTrends}>
+                                    <CartesianGrid strokeDasharray="3 3" />
+                                    <XAxis dataKey="date" tick={{ fontSize: 11 }} />
+                                    <YAxis tick={{ fontSize: 11 }} />
+                                    <Tooltip />
+                                    <Legend />
+                                    <Line type="monotone" dataKey="count" stroke="#16a34a" strokeWidth={2} name="Incidents" />
+                                </LineChart>
+                            </ResponsiveContainer>
+                        </div>
+
+                        {/* Incident Categories Chart */}
+                        <div
+                            style={{
+                                padding: "24px",
+                                borderRadius: 16,
+                                background: "#ffffff",
+                                border: "1px solid #e5e7eb",
+                                boxShadow: "var(--shadow-sm)",
+                            }}
+                        >
+                            <h3 style={{ fontSize: 14, fontWeight: 600, color: "#0f172a", marginBottom: 16 }}>
+                                Incident Categories
+                            </h3>
+                            <ResponsiveContainer width="100%" height={250}>
+                                <PieChart>
+                                    <Pie
+                                        data={analytics.incidentCategories}
+                                        cx="50%"
+                                        cy="50%"
+                                        labelLine={false}
+                                        label={({ name, percent }) => `${name}: ${((percent ?? 0) * 100).toFixed(0)}%`}
+                                        outerRadius={80}
+                                        fill="#8884d8"
+                                        dataKey="count"
+                                    >
+                                        {analytics.incidentCategories.map((entry: any, index: number) => (
+                                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                        ))}
+                                    </Pie>
+                                    <Tooltip />
+                                </PieChart>
+                            </ResponsiveContainer>
+                        </div>
+
+                        {/* User Growth Chart */}
+                        <div
+                            style={{
+                                padding: "24px",
+                                borderRadius: 16,
+                                background: "#ffffff",
+                                border: "1px solid #e5e7eb",
+                                boxShadow: "var(--shadow-sm)",
+                            }}
+                        >
+                            <h3 style={{ fontSize: 14, fontWeight: 600, color: "#0f172a", marginBottom: 16 }}>
+                                User Growth (30 Days)
+                            </h3>
+                            <ResponsiveContainer width="100%" height={250}>
+                                <BarChart data={analytics.userGrowth}>
+                                    <CartesianGrid strokeDasharray="3 3" />
+                                    <XAxis dataKey="date" tick={{ fontSize: 11 }} />
+                                    <YAxis tick={{ fontSize: 11 }} />
+                                    <Tooltip />
+                                    <Legend />
+                                    <Bar dataKey="count" fill="#3b82f6" name="New Users" />
+                                </BarChart>
+                            </ResponsiveContainer>
+                        </div>
+
+                        {/* SOS Trends Chart */}
+                        <div
+                            style={{
+                                padding: "24px",
+                                borderRadius: 16,
+                                background: "#ffffff",
+                                border: "1px solid #e5e7eb",
+                                boxShadow: "var(--shadow-sm)",
+                            }}
+                        >
+                            <h3 style={{ fontSize: 14, fontWeight: 600, color: "#0f172a", marginBottom: 16 }}>
+                                SOS Alert Trends (7 Days)
+                            </h3>
+                            <ResponsiveContainer width="100%" height={250}>
+                                <LineChart data={analytics.sosTrends}>
+                                    <CartesianGrid strokeDasharray="3 3" />
+                                    <XAxis dataKey="date" tick={{ fontSize: 11 }} />
+                                    <YAxis tick={{ fontSize: 11 }} />
+                                    <Tooltip />
+                                    <Legend />
+                                    <Line type="monotone" dataKey="count" stroke="#ef4444" strokeWidth={2} name="SOS Alerts" />
+                                </LineChart>
+                            </ResponsiveContainer>
                         </div>
                     </div>
                 </div>
-            </div>
+            )}
 
             {/* Recent Activity */}
             <div style={{ marginBottom: 28 }}>

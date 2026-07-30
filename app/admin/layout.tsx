@@ -35,27 +35,18 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     // Route protection: only admins can access admin routes
     // Use useEffect to avoid router.push during render
     useEffect(() => {
-        console.log("=== AdminLayout useEffect ===");
-        console.log("loading:", loading);
-        console.log("user:", user);
-        console.log("user.role:", user?.role);
-        console.log("==========================");
-        
         // Only redirect if we're done loading AND we have a user AND user is not admin
         if (!loading && user && user.role !== "admin") {
-            console.log(">>> REDIRECTING: User is not admin, going to /dashboard");
             router.push("/dashboard");
         }
         // If we're done loading and user is null, redirect to login
         if (!loading && !user) {
-            console.log(">>> REDIRECTING: No user, going to /login");
             router.push("/login");
         }
     }, [user, loading, router]);
 
     // Show loading state while checking auth
     if (loading) {
-        console.log(">>> RENDERING: Loading state");
         return (
             <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100vh" }}>
                 <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="2.5" strokeLinecap="round" className="animate-spin">
@@ -67,7 +58,6 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
 
     // Don't render if user is not admin (redirect will happen in useEffect)
     if (!user || user.role !== "admin") {
-        console.log(">>> RENDERING: User not admin, showing loading while redirecting");
         return (
             <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100vh" }}>
                 <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="2.5" strokeLinecap="round" className="animate-spin">
@@ -76,8 +66,6 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             </div>
         );
     }
-
-    console.log(">>> RENDERING: Admin dashboard for user with role:", user?.role);
 
     return (
         <ToastProvider>

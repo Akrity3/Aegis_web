@@ -39,6 +39,32 @@ function ReportsIcon() {
         </svg>
     );
 }
+function IncidentsIcon() {
+    return (
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+            <line x1="12" y1="9" x2="12" y2="13" />
+            <line x1="12" y1="17" x2="12.01" y2="17" />
+        </svg>
+    );
+}
+function AlertsIcon() {
+    return (
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+            <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+        </svg>
+    );
+}
+function MapIcon() {
+    return (
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6" />
+            <line x1="8" y1="2" x2="8" y2="18" />
+            <line x1="16" y1="6" x2="16" y2="22" />
+        </svg>
+    );
+}
 function AnalyticsIcon() {
     return (
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -72,6 +98,9 @@ function LogoutIcon() {
 const ADMIN_NAV_ITEMS = [
     { label: "Dashboard",       href: "/admin",              exact: true,  Icon: DashboardIcon },
     { label: "User Management", href: "/admin/users",       exact: false, Icon: UsersIcon },
+    { label: "Incidents",       href: "/admin/incidents",   exact: false, Icon: IncidentsIcon },
+    { label: "SOS Alerts",      href: "/admin/alerts",      exact: false, Icon: AlertsIcon },
+    { label: "Safety Map",      href: "/admin/safety-map",  exact: false, Icon: MapIcon },
     { label: "Reports",         href: "/admin/reports",     exact: false, Icon: ReportsIcon },
     { label: "Analytics",       href: "/admin/analytics",   exact: false, Icon: AnalyticsIcon },
     { label: "Settings",        href: "/admin/settings",    exact: false, Icon: SettingsIcon },
