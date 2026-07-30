@@ -3,11 +3,16 @@
 import { useState, useTransition, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { GoogleLogin } from "@react-oauth/google";
 import { registerSchema, RegisterFormValues } from "./schema";
-import { handleRegisterUser } from "@/lib/actions/auth-action";
+import { handleGoogleLoginUser, handleRegisterUser } from "@/lib/actions/auth-action";
+
+interface RegisterFormProps {
+  showGoogleButton?: boolean;
+}
 
 const inputBase = {
   width: "100%",
@@ -55,21 +60,37 @@ const EyeIcon = ({ crossed }: { crossed: boolean }) => crossed ? (
   </svg>
 );
 
-export default function RegisterForm() {
+export default function RegisterForm({ showGoogleButton = true }: RegisterFormProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
+
+  // Get Google profile data from URL params
+  const googleEmail = searchParams.get("email");
+  const googleFirstName = searchParams.get("firstName");
+  const googleLastName = searchParams.get("lastName");
+  const googleProfilePicture = searchParams.get("profilePicture");
 
   const {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
+    setValue,
   } = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
     defaultValues: { agreed: false },
   });
+
+  // Pre-fill form with Google data if available
+  useEffect(() => {
+    if (googleEmail) setValue("email", googleEmail);
+    if (googleFirstName) setValue("firstName", googleFirstName);
+    if (googleLastName) setValue("lastName", googleLastName);
+  }, [googleEmail, googleFirstName, googleLastName, setValue]);
 
   const onSubmit = (data: RegisterFormValues) => {
     setError("");
@@ -88,11 +109,62 @@ export default function RegisterForm() {
     });
   };
 
+  const handleGoogleSuccess = async (credentialResponse: any) => {
+    setError("");
+    setGoogleLoading(true);
+
+    try {
+      const idToken = credentialResponse?.credential;
+      if (!idToken) {
+        setError("Google authentication failed (missing token)");
+        return;
+      }
+
+      const result = await handleGoogleLoginUser(idToken);
+
+      if (result.success) {
+        // New user: stay on register but prefill via query params (reuses existing logic)
+        if (result.isNewUser && result.googleProfile) {
+          const params = new URLSearchParams({
+            email: result.googleProfile.email,
+            firstName: result.googleProfile.firstName,
+            lastName: result.googleProfile.lastName,
+            profilePicture: result.googleProfile.profilePicture,
+          });
+          router.push(`/register?${params.toString()}`);
+        } else {
+          // Existing user: already logged in, redirect
+          const userRole = result.data?.role;
+          if (userRole === "admin") {
+            window.location.href = "/admin";
+          } else {
+            window.location.href = "/dashboard";
+          }
+        }
+      } else {
+        setError(result.message || "Google authentication failed");
+      }
+    } catch (err: unknown) {
+      const e = err as { message?: string };
+      setError(e?.message || "Google authentication failed");
+    } finally {
+      setGoogleLoading(false);
+    }
+  };
+
+  const handleGoogleError = () => {
+    setError("Google authentication was cancelled or failed");
+  };
+
   return (
     <div style={{
       display: "flex", 
       minHeight: "100vh", 
-      background: "#F8FAFC",
+      background:
+        "radial-gradient(1200px 600px at 10% 10%, rgba(22, 163, 74, 0.32), rgba(193, 220, 202, 0))," +
+        "radial-gradient(900px 520px at 90% 15%, rgba(15, 23, 42, 0.10), rgba(193, 220, 202, 0))," +
+        "radial-gradient(900px 520px at 85% 92%, rgba(21, 128, 61, 0.16), rgba(193, 220, 202, 0))," +
+        "linear-gradient(180deg, #bfd9c7 0%, #d7e9dd 100%)",
       fontFamily: "'Inter', 'Roboto', 'Outfit', sans-serif",
       alignItems: "center",
       justifyContent: "center",
@@ -101,17 +173,18 @@ export default function RegisterForm() {
       <div style={{
         width: "100%", 
         maxWidth: "480px", 
-        background: "#FFFFFF",
+        background: "linear-gradient(180deg, rgba(255,255,255,0.99), rgba(233,247,238,0.96))",
         padding: "52px 48px",
         borderRadius: "18px",
-        border: "1px solid #E5E7EB",
-        boxShadow: "0 10px 40px -10px rgba(0,0,0,0.06)",
+        border: "1px solid rgba(187, 247, 208, 0.9)",
+        boxShadow: "0 28px 80px -24px rgba(15,23,42,0.34), 0 10px 28px rgba(22,163,74,0.12)",
+        transform: "translateY(-6px)",
       }}>
         {/* Logo Section */}
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginBottom: "40px" }}>
           <Image src="/logo.png" alt="Aegis+ Logo" width={64} height={64} style={{ borderRadius: "14px", objectFit: "contain", marginBottom: "16px" }} />
           <h1 style={{ color: "#111827", fontWeight: 800, fontSize: "24px", letterSpacing: "-0.5px", margin: "0 0 6px 0" }}>
-            Aegis<span style={{ color: "#16A34A" }}>+</span>
+            Aegis<span style={{ color: "#EF4444" }}>+</span>
           </h1>
           <p style={{ color: "#6B7280", fontSize: "14.5px", margin: 0, fontWeight: 500 }}>
             Protecting Nepal, One Alert at a Time
@@ -216,12 +289,18 @@ export default function RegisterForm() {
                 type="email"
                 placeholder="you@example.com"
                 {...register("email")}
-                style={errors.email ? { ...inputError } : { ...inputBase }}
-                onFocus={e => { if (!errors.email) { e.target.style.borderColor = "#22C55E"; e.target.style.background = "#FFFFFF"; e.target.style.boxShadow = "0 0 0 3px rgba(34, 197, 94, 0.1)"; } }}
-                onBlur={e => { if (!errors.email) { e.target.style.borderColor = "#E5E7EB"; e.target.style.background = "#F9FAFB"; e.target.style.boxShadow = "none"; } }}
+                disabled={!!googleEmail}
+                style={errors.email ? { ...inputError, background: "#F3F4F6", cursor: "not-allowed" } : { ...inputBase, background: googleEmail ? "#F3F4F6" : "#F9FAFB", cursor: googleEmail ? "not-allowed" : "auto" }}
+                onFocus={e => { if (!errors.email && !googleEmail) { e.target.style.borderColor = "#22C55E"; e.target.style.background = "#FFFFFF"; e.target.style.boxShadow = "0 0 0 3px rgba(34, 197, 94, 0.1)"; } }}
+                onBlur={e => { if (!errors.email && !googleEmail) { e.target.style.borderColor = "#E5E7EB"; e.target.style.background = "#F9FAFB"; e.target.style.boxShadow = "none"; } }}
               />
             </div>
             {errors.email && <ErrorMsg msg={errors.email.message!} />}
+            {googleEmail && (
+              <p style={{ color: "#6B7280", fontSize: "12px", marginTop: "6px", marginBottom: "0" }}>
+                Email from Google account (cannot be changed)
+              </p>
+            )}
           </div>
 
           <div style={{ marginBottom: errors.phoneNumber ? "8px" : "24px" }}>
@@ -338,31 +417,46 @@ export default function RegisterForm() {
           </button>
         </form>
 
-        <div style={{ display: "flex", alignItems: "center", gap: "16px", marginBottom: "24px" }}>
-          <div style={{ flex: 1, height: "1px", background: "#E5E7EB" }} />
-          <span style={{ color: "#9CA3AF", fontSize: "13px", fontWeight: 600, letterSpacing: "1px" }}>OR</span>
-          <div style={{ flex: 1, height: "1px", background: "#E5E7EB" }} />
-        </div>
+        {showGoogleButton && (
+          <>
+            <div style={{ display: "flex", alignItems: "center", gap: "16px", marginBottom: "24px" }}>
+              <div style={{ flex: 1, height: "1px", background: "#E5E7EB" }} />
+              <span style={{ color: "#9CA3AF", fontSize: "13px", fontWeight: 600, letterSpacing: "1px" }}>OR</span>
+              <div style={{ flex: 1, height: "1px", background: "#E5E7EB" }} />
+            </div>
 
-        <button type="button" style={{
-          width: "100%", padding: "15px",
-          background: "#FFFFFF", border: "1.5px solid #E5E7EB",
-          borderRadius: "12px", cursor: "pointer", fontSize: "15.5px",
-          fontWeight: 600, color: "#374151",
-          display: "flex", alignItems: "center", justifyContent: "center", gap: "12px",
-          marginBottom: "36px",
-          transition: "background 0.2s, border-color 0.2s"
-        }}
-        onMouseEnter={e => { e.currentTarget.style.background = "#F9FAFB"; e.currentTarget.style.borderColor = "#D1D5DB"; }}
-        onMouseLeave={e => { e.currentTarget.style.background = "#FFFFFF"; e.currentTarget.style.borderColor = "#E5E7EB"; }}>
-          <svg width="20" height="20" viewBox="0 0 48 48">
-            <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z" />
-            <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z" />
-            <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z" />
-            <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.29-8.16 2.29-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z" />
-          </svg>
-          Continue with Google
-        </button>
+            <div style={{ marginBottom: "36px", display: "flex", justifyContent: "center" }}>
+              {googleLoading ? (
+                <div style={{
+                  width: "100%", padding: "15px",
+                  background: "#FFFFFF", border: "1.5px solid #E5E7EB",
+                  borderRadius: "12px", fontSize: "15.5px",
+                  fontWeight: 600, color: "#374151",
+                  display: "flex", alignItems: "center", justifyContent: "center", gap: "12px",
+                  opacity: 0.7
+                }}>
+                  <svg width="20" height="20" viewBox="0 0 48 48">
+                    <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z" />
+                    <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z" />
+                    <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z" />
+                    <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.29-8.16 2.29-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z" />
+                  </svg>
+                  Continuing with Google...
+                </div>
+              ) : (
+                <div style={{ width: "100%" }}>
+                  <GoogleLogin
+                    onSuccess={handleGoogleSuccess}
+                    onError={handleGoogleError}
+                    theme="outline"
+                    size="large"
+                    text="signup_with"
+                  />
+                </div>
+              )}
+            </div>
+          </>
+        )}
 
         <p style={{ textAlign: "center", fontSize: "15px", color: "#6B7280", margin: 0 }}>
           Already have an account?{" "}
