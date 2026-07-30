@@ -218,7 +218,7 @@ export default function ContactModal({
                             <input
                                 type="text"
                                 {...register("name")}
-                                placeholder="e.g., John Doe"
+                                placeholder="e.g., Kriti Shah"
                                 disabled={loading}
                                 style={{
                                     width: "100%",
